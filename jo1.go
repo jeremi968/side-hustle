@@ -2,170 +2,149 @@ package main
 
 import "fmt"
 
+const NMAX int = 99
+
 type IncomeSource struct {
-    Category string
-    Amount   float64
-    Expenses float64
-    Profit   float64
+	Category string
+	Amount   float64
+	Expenses float64
+	Profit   float64
 }
 
-func (i *IncomeSource) CalculateProfit() {
-    i.Profit = i.Amount - i.Expenses
+type tabSource [NMAX]IncomeSource
+
+func calculateProfit(source *IncomeSource) {
+	source.Profit = source.Amount - source.Expenses
 }
 
-func addIncomeSource(sources *[]IncomeSource) {
-    var category string
-    var amount, expenses float64
+func addIncome(data *tabSource, total *int) {
+	if *total >= NMAX {
+		fmt.Println("Data is full!")
+		return
+	}
 
-    fmt.Print("Enter the Category (e.g., freelancing, passive_income): ")
-    fmt.Scanln(&category)
+	var cat string
+	var amt, exp float64
 
-    fmt.Print("Enter the Amount (Income): ")
-    fmt.Scanln(&amount)
+	fmt.Print("Enter category: ")
+	fmt.Scan(&cat)
 
-    fmt.Print("Enter the Expenses: ")
-    fmt.Scanln(&expenses)
+	fmt.Print("Enter income amount: ")
+	fmt.Scan(&amt)
 
-    income := IncomeSource{Category: category, Amount: amount, Expenses: expenses}
-    income.CalculateProfit()
+	fmt.Print("Enter expenses: ")
+	fmt.Scan(&exp)
 
-    *sources = append(*sources, income)
-    fmt.Println("Income source added successfully!\n")
+	data[*total].Category = cat
+	data[*total].Amount = amt
+	data[*total].Expenses = exp
+	data[*total].Profit = amt - exp
+
+	*total = *total + 1
+	fmt.Println("Income added successfully!\n")
 }
 
-func editIncomeSource(sources *[]IncomeSource) {
-    var index int
-    var category string
-    var amount, expenses float64
+func editIncome(data *tabSource, total int) {
+	var index int
+	fmt.Print("Enter index to edit: ")
+	fmt.Scan(&index)
 
-    fmt.Print("Enter the index of the income source to edit: ")
-    fmt.Scanln(&index)
+	if index >= 0 && index < total {
+		var cat string
+		var amt, exp float64
 
-    if index >= 0 && index < len(*sources) {
-        fmt.Print("Enter the new Category: ")
-        fmt.Scanln(&category)
+		fmt.Print("Enter new category: ")
+		fmt.Scan(&cat)
 
-        fmt.Print("Enter the new Amount (Income): ")
-        fmt.Scanln(&amount)
+		fmt.Print("Enter new income amount: ")
+		fmt.Scan(&amt)
 
-        fmt.Print("Enter the new Expenses: ")
-        fmt.Scanln(&expenses)
+		fmt.Print("Enter new expenses: ")
+		fmt.Scan(&exp)
 
-        (*sources)[index].Category = category
-        (*sources)[index].Amount = amount
-        (*sources)[index].Expenses = expenses
-        (*sources)[index].CalculateProfit()
+		data[index].Category = cat
+		data[index].Amount = amt
+		data[index].Expenses = exp
+		data[index].Profit = amt - exp
 
-        fmt.Println("Income source updated successfully!\n")
-    } else {
-        fmt.Println("Invalid index!\n")
-    }
+		fmt.Println("Income updated successfully!\n")
+	} else {
+		fmt.Println("Invalid index!\n")
+	}
 }
 
-func deleteIncomeSource(sources *[]IncomeSource) {
-    var index int
-    fmt.Print("Enter the index of the income source to delete: ")
-    fmt.Scanln(&index)
+func deleteIncome(data *tabSource, total *int) {
+	var index int
+	fmt.Print("Enter index to delete: ")
+	fmt.Scan(&index)
 
-    if index >= 0 && index < len(*sources) {
-        *sources = append((*sources)[:index], (*sources)[index+1:]...)
-        fmt.Println("Income source deleted successfully!\n")
-    } else {
-        fmt.Println("Invalid index!\n")
-    }
+	if index >= 0 && index < *total {
+		for i := index; i < *total-1; i++ {
+			data[i] = data[i+1]
+		}
+		*total = *total - 1
+		fmt.Println("Income deleted successfully!\n")
+	} else {
+		fmt.Println("Invalid index!\n")
+	}
 }
 
-func selectionSort(sources *[]IncomeSource) {
-    for i := 0; i < len(*sources)-1; i++ {
-        minIndex := i
-        for j := i + 1; j < len(*sources); j++ {
-            if (*sources)[j].Amount < (*sources)[minIndex].Amount {
-                minIndex = j
-            }
-        }
-        (*sources)[i], (*sources)[minIndex] = (*sources)[minIndex], (*sources)[i]
-    }
+func generateReport(data tabSource, total int) {
+	var totalIncome float64 = 0
+	var totalProfit float64 = 0
+
+	fmt.Println("\n--- Monthly Income Report ---")
+	for i := 0; i < total; i++ {
+		fmt.Printf("%d. Category: %s | Income: %.2f | Expenses: %.2f | Profit: %.2f\n",
+			i, data[i].Category, data[i].Amount, data[i].Expenses, data[i].Profit)
+		totalIncome += data[i].Amount
+		totalProfit += data[i].Profit
+	}
+
+	fmt.Printf("\nTotal Income: %.2f\n", totalIncome)
+	fmt.Printf("Total Profit: %.2f\n", totalProfit)
 }
 
-func generateReport(sources []IncomeSource) {
-    totalIncome, totalProfit := 0.0, 0.0
-    fmt.Println("\nMonthly Report:")
-    for i, source := range sources {
-        fmt.Printf("%d. Category: %s, Amount: %.2f, Expenses: %.2f, Profit: %.2f\n",
-            i, source.Category, source.Amount, source.Expenses, source.Profit)
-        totalIncome += source.Amount
-        totalProfit += source.Profit
-    }
-    fmt.Printf("Total Income: %.2f\nTotal Profit: %.2f\n", totalIncome, totalProfit)
-}
-
-func calculateTotalProfit(sources []IncomeSource) {
-    total := 0.0
-    for _, source := range sources {
-        total += source.Profit
-    }
-    fmt.Printf("Total Profit from All Sources: %.2f\n", total)
-}
-
-// show only passive income sources
-func showPassiveIncome(sources []IncomeSource) {
-    fmt.Println("\nPassive Income Sources:")
-    found := false
-    for i, source := range sources {
-        if containsPassive(source.Category) {
-            fmt.Printf("%d. Category: %s, Amount: %.2f, Expenses: %.2f, Profit: %.2f\n",
-                i, source.Category, source.Amount, source.Expenses, source.Profit)
-            found = true
-        }
-    }
-    if !found {
-        fmt.Println("No passive income sources found.")
-    }
-}
-
-// check if "passive" is in category
-func containsPassive(category string) bool {
-    for i := 0; i <= len(category)-7; i++ {
-        if category[i:i+7] == "passive" {
-            return true
-        }
-    }
-    return false
+func calculateTotalProfit(data tabSource, total int) {
+	var totalProfit float64 = 0
+	for i := 0; i < total; i++ {
+		totalProfit += data[i].Profit
+	}
+	fmt.Printf("Total Profit: %.2f\n", totalProfit)
 }
 
 func main() {
-    var sources []IncomeSource
+	var data tabSource
+	var total int = 0
 
-    for {
-        fmt.Println("\nIncome Tracker Application")
-        fmt.Println("1. Add New Income Source")
-        fmt.Println("2. Edit Income Source")
-        fmt.Println("3. Delete Income Source")
-        fmt.Println("4. Generate Monthly Report")
-        fmt.Println("5. Exit")
-        fmt.Println("6. Calculate Total Profit Only")
-        fmt.Println("7. Show Passive Income Sources")
-        fmt.Print("Choose an option: ")
+	for {
+		fmt.Println("\n=== Passive Income Tracker Menu ===")
+		fmt.Println("1. Add Income Source")
+		fmt.Println("2. Edit Income Source")
+		fmt.Println("3. Delete Income Source")
+		fmt.Println("4. Show Monthly Report")
+		fmt.Println("5. Calculate Total Profit")
+		fmt.Println("6. Exit")
+		fmt.Print("Choose an option (1-6): ")
 
-        var choice int
-        fmt.Scanln(&choice)
+		var choice int
+		fmt.Scan(&choice)
 
-        switch choice {
-        case 1:
-            addIncomeSource(&sources)
-        case 2:
-            editIncomeSource(&sources)
-        case 3:
-            deleteIncomeSource(&sources)
-        case 4:
-            generateReport(sources)
-        case 5:
-            fmt.Println("Exiting the program.")
-            return
-        case 6:
-            calculateTotalProfit(sources)
-        default:
-            fmt.Println("Invalid option. Please choose again.")
-        }
-    }
+		if choice == 1 {
+			addIncome(&data, &total)
+		} else if choice == 2 {
+			editIncome(&data, total)
+		} else if choice == 3 {
+			deleteIncome(&data, &total)
+		} else if choice == 4 {
+			generateReport(data, total)
+		} else if choice == 5 {
+			calculateTotalProfit(data, total)
+		} else if choice == 6 {
+			fmt.Println("Exiting program. Goodbye!")
+			break
+		} else {
+			fmt.Println("Invalid option. Please choose again.")
+		}
+	}
 }
